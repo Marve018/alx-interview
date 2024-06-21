@@ -1,46 +1,44 @@
 #!/usr/bin/python3
-"""
- 0. Log parsing
-"""
-
-
+"""Log Parser"""
 import sys
 
 
-def print_stat(dict_scode, file_size):
-    """prints filesize and status code count"""
-    print("File size: {}".format(file_size))
-    for code, count in sorted(dict_scode.items()):
-        if count != 0:
-            print("{}: {}".format(code, count))
+if __name__ == '__main__':
+    file_size = [0]
+    status_codes = {200: 0, 301: 0, 400: 0, 401: 0,
+                    403: 0, 404: 0, 405: 0, 500: 0}
 
+    def print_stats():
+        """ Print statistics """
+        print('File size: {}'.format(file_size[0]))
+        for key in sorted(status_codes.keys()):
+            if status_codes[key]:
+                print('{}: {}'.format(key, status_codes[key]))
 
-acc_file_size = 0
-code = 0
-counter = 0
-dict_stat_code = {
-                  "200": 0,
-                  "301": 0,
-                  "400": 0,
-                  "401": 0,
-                  "403": 0,
-                  "404": 0,
-                  "405": 0,
-                  "500": 0}
+    def parse_line(line):
+        """ Checks the line for matches """
+        try:
+            line = line[:-1]
+            word = line.split(' ')
+            # File size is last parameter on stdout
+            file_size[0] += int(word[-1])
+            # Status code comes before file size
+            status_code = int(word[-2])
+            # Move through dictionary of status codes
+            if status_code in status_codes:
+                status_codes[status_code] += 1
+        except BaseException:
+            pass
 
-try:
-    for line in sys.stdin:
-        log_arg_list = line.split()
-        log_reversed = log_arg_list[::-1]
-        if len(log_reversed) > 2:
-            counter += 1
-            if counter <= 10:
-                acc_file_size += int(log_reversed[0])  # file size
-                code = log_reversed[1]  # status code
-                if (code in dict_stat_code.keys()):
-                    dict_stat_code[code] += 1
-                    if (counter == 10):
-                        print_stat(dict_stat_code, acc_file_size)
-                        counter = 0
-finally:
-    print_stat(dict_stat_code, acc_file_size)
+    linenum = 1
+    try:
+        for line in sys.stdin:
+            parse_line(line)
+            """ print after every 10 lines """
+            if linenum % 10 == 0:
+                print_stats()
+            linenum += 1
+    except KeyboardInterrupt:
+        print_stats()
+        raise
+    print_stats()
